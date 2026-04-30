@@ -1,0 +1,34 @@
+
+# 构建目录
+/build/
+# Qt Creator 用户配置
+*.pro.user
+*.pro.user.*
+
+
+# VS 临时文件
+.vs/
+# 解决方案文件
+*.sln
+# 项目文件缓存
+*.vcxproj*
+*.suo
+*.opensdf
+*.sdf
+
+# 可执行文件
+*.exe
+# 动态库
+*.dll
+*.so
+# 静态库
+*.lib
+*.a
+# 目标文件
+*.o
+*.obj
+
+# 日志文件
+*.log
+# 临时备份文件
+*~
