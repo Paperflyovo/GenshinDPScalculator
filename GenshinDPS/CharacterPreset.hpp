@@ -7,7 +7,6 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
-// 技能类型
 enum class SkillType {
     NormalAttack,
     ChargedAttack,
@@ -16,21 +15,20 @@ enum class SkillType {
     Other
 };
 
-// 单个技能动作定义
 struct SkillAction {
     QString name;
     SkillType type = SkillType::NormalAttack;
     double multiplier = 1.0;
     double actionTime = 1.0;
+    QString baseAttribute = "attack"; // "attack", "defense", "maxHP"
 };
 
-// 角色基础属性
 struct CharacterBaseStats {
     double maxHP = 0.0;
     double attack = 0.0;
     double defense = 0.0;
     double elementalMastery = 0.0;
-    double energyRecharge = 0.0;
+    double energyRecharge = 100.0;  // 默认100%
     double hydroBonus  = 0.0;
     double pyroBonus   = 0.0;
     double cryoBonus   = 0.0;
@@ -39,8 +37,8 @@ struct CharacterBaseStats {
     double geoBonus    = 0.0;
     double dendroBonus  = 0.0;
     double physicalBonus= 0.0;
-    double critRate = 5.0;       // 暴击率 (%)
-    double critDamage = 50.0;    // 暴击伤害加成 (%)
+    double critRate = 5.0;
+    double critDamage = 50.0;
 };
 
 class CharacterPreset {

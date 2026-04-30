@@ -30,6 +30,7 @@ QJsonObject CharacterPreset::toJson() const
         skill["type"] = static_cast<int>(s.type);
         skill["multiplier"] = s.multiplier;
         skill["actionTime"] = s.actionTime;
+        skill["baseAttribute"] = s.baseAttribute;
         skillsArr.append(skill);
     }
     obj["skills"] = skillsArr;
@@ -47,7 +48,7 @@ CharacterPreset CharacterPreset::fromJson(const QJsonObject& obj)
     b.attack = stats["attack"].toDouble();
     b.defense = stats["defense"].toDouble();
     b.elementalMastery = stats["elementalMastery"].toDouble();
-    b.energyRecharge = stats["energyRecharge"].toDouble();
+    b.energyRecharge = stats["energyRecharge"].toDouble(100.0);
     b.hydroBonus = stats["hydroBonus"].toDouble();
     b.pyroBonus = stats["pyroBonus"].toDouble();
     b.cryoBonus = stats["cryoBonus"].toDouble();
@@ -69,6 +70,7 @@ CharacterPreset CharacterPreset::fromJson(const QJsonObject& obj)
         a.type = static_cast<SkillType>(s["type"].toInt());
         a.multiplier = s["multiplier"].toDouble();
         a.actionTime = s["actionTime"].toDouble();
+        a.baseAttribute = s["baseAttribute"].toString("attack");
         skills.append(a);
     }
     preset.setSkills(skills);

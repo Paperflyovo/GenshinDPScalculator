@@ -50,7 +50,6 @@ void Page_Team::setupUI()
     m_memberList->setMaximumHeight(80);
     rightLayout->addWidget(m_memberList);
 
-    // 当成员列表发生增删时，刷新可供选择技能的角色列表
     QAbstractItemModel *memberModel = m_memberList->model();
     connect(memberModel, &QAbstractItemModel::rowsInserted, this, [this]() { refreshMemberCombo(); });
     connect(memberModel, &QAbstractItemModel::rowsRemoved, this, [this]() { refreshMemberCombo(); });
@@ -65,16 +64,20 @@ void Page_Team::setupUI()
     skillCtrl->addWidget(m_addSkillBtn);
     skillCtrl->addWidget(m_removeSkillBtn);
     rightLayout->addLayout(skillCtrl);
-    m_skillSeqTable = new QTableWidget(0, 4, this);
-    m_skillSeqTable->setHorizontalHeaderLabels({"角色", "技能名称", "反应标记", "动作时间(秒)"});
+
+    // 技能序列表格：角色、技能名称、反应标记（移除动作时间列）
+    m_skillSeqTable = new QTableWidget(0, 3, this);
+    m_skillSeqTable->setHorizontalHeaderLabels({"角色", "技能名称", "反应标记"});
     m_skillSeqTable->horizontalHeader()->setStretchLastSection(true);
     rightLayout->addWidget(m_skillSeqTable);
 
+    // Buff 区域
     rightLayout->addWidget(new QLabel("配队 Buff:", this));
     m_buffTable = new QTableWidget(0, 5, this);
     m_buffTable->setHorizontalHeaderLabels({"来源角色", "目标角色", "增益类型", "数值", "百分比"});
     m_buffTable->horizontalHeader()->setStretchLastSection(true);
     rightLayout->addWidget(m_buffTable);
+
     QHBoxLayout *buffBtnLayout = new QHBoxLayout();
     m_addBuffBtn = new QPushButton("添加 Buff", this);
     m_removeBuffBtn = new QPushButton("删除 Buff", this);
@@ -110,9 +113,7 @@ void Page_Team::refreshMemberCombo()
     m_memberCombo->clear();
     m_skillCharCombo->clear();
     const auto& chars = DataModel::instance().characterPresets();
-    for (const auto& c : chars)
-        m_memberCombo->addItem(c.name());
-    // 技能角色选择只显示队伍中的成员
+    for (const auto& c : chars) m_memberCombo->addItem(c.name());
     for (int i = 0; i < m_memberList->count(); ++i)
         m_skillCharCombo->addItem(m_memberList->item(i)->text());
 }
@@ -121,16 +122,9 @@ void Page_Team::onAddMember()
 {
     QString name = m_memberCombo->currentText();
     if (name.isEmpty()) return;
-    if (m_memberList->count() >= 4) {
-        QMessageBox::information(this, "提示", "队伍最多4人。");
-        return;
-    }
-    for (int i = 0; i < m_memberList->count(); ++i) {
-        if (m_memberList->item(i)->text() == name) {
-            QMessageBox::information(this, "提示", "角色已在队伍中。");
-            return;
-        }
-    }
+    if (m_memberList->count() >= 4) { QMessageBox::information(this, "提示", "队伍最多4人。"); return; }
+    for (int i = 0; i < m_memberList->count(); ++i)
+        if (m_memberList->item(i)->text() == name) { QMessageBox::information(this, "提示", "角色已在队伍中。"); return; }
     m_memberList->addItem(name);
 }
 
@@ -146,9 +140,8 @@ void Page_Team::onAddSkillStep()
     if (charName.isEmpty()) return;
     int row = m_skillSeqTable->rowCount();
     m_skillSeqTable->insertRow(row);
-    m_skillSeqTable->setItem(row, 0, new QTableWidgetItem(charName)); // 角色名列
+    m_skillSeqTable->setItem(row, 0, new QTableWidgetItem(charName));
 
-    // 为该角色创建技能下拉框
     QComboBox *skillCombo = new QComboBox();
     const CharacterPreset* preset = DataModel::instance().findCharacterPreset(charName);
     if (preset) {
@@ -157,9 +150,7 @@ void Page_Team::onAddSkillStep()
             skillCombo->addItem(sa.name);
     }
     m_skillSeqTable->setCellWidget(row, 1, skillCombo);
-
-    m_skillSeqTable->setItem(row, 2, new QTableWidgetItem(""));   // 反应标记
-    m_skillSeqTable->setItem(row, 3, new QTableWidgetItem("1.0"));
+    m_skillSeqTable->setItem(row, 2, new QTableWidgetItem(""));
 }
 
 void Page_Team::onRemoveSkillStep()
@@ -172,9 +163,30 @@ void Page_Team::onAddBuff()
 {
     int row = m_buffTable->rowCount();
     m_buffTable->insertRow(row);
-    m_buffTable->setItem(row, 0, new QTableWidgetItem(""));
-    m_buffTable->setItem(row, 1, new QTableWidgetItem(""));
-    m_buffTable->setItem(row, 2, new QTableWidgetItem("allDamage"));
+
+    // 来源角色下拉
+    QComboBox *srcCombo = new QComboBox();
+    for (int i = 0; i < m_memberList->count(); ++i)
+        srcCombo->addItem(m_memberList->item(i)->text());
+    m_buffTable->setCellWidget(row, 0, srcCombo);
+
+    // 目标角色下拉（可包含全体）
+    QComboBox *tgtCombo = new QComboBox();
+    tgtCombo->addItem("全体");
+    for (int i = 0; i < m_memberList->count(); ++i)
+        tgtCombo->addItem(m_memberList->item(i)->text());
+    m_buffTable->setCellWidget(row, 1, tgtCombo);
+
+    // 增益类型可编辑下拉
+    QComboBox *typeCombo = new QComboBox();
+    typeCombo->setEditable(true);
+    QStringList buffTypes = {"攻击力%", "防御力%", "生命上限%", "元素精通", "充能效率%",
+                             "水伤加成%", "火伤加成%", "冰伤加成%", "雷伤加成%",
+                             "风伤加成%", "岩伤加成%", "草伤加成%", "物理伤害加成%", "全伤害加成%"};
+    typeCombo->addItems(buffTypes);
+    typeCombo->setCurrentText("全伤害加成%");
+    m_buffTable->setCellWidget(row, 2, typeCombo);
+
     m_buffTable->setItem(row, 3, new QTableWidgetItem("0"));
     QCheckBox *cb = new QCheckBox();
     cb->setChecked(true);
@@ -190,32 +202,26 @@ void Page_Team::onRemoveBuff()
 void Page_Team::onSaveTeam()
 {
     TeamConfig team = collectTeamData();
-    if (team.name().isEmpty()) {
-        QMessageBox::warning(this, "错误", "配队名称不能为空。");
-        return;
-    }
+    if (team.name().isEmpty()) { QMessageBox::warning(this, "错误", "配队名称不能为空。"); return; }
     auto& model = DataModel::instance();
     int sel = m_teamList->currentRow();
-    if (sel >= 0 && sel < model.teams().size())
-        model.updateTeam(sel, team);
-    else
-        model.addTeam(team);
+    if (sel >= 0 && sel < model.teams().size()) model.updateTeam(sel, team);
+    else model.addTeam(team);
 }
 
 TeamConfig Page_Team::collectTeamData() const
 {
     TeamConfig tc(m_teamNameEdit->text());
     QVector<QString> members;
-    for (int i = 0; i < m_memberList->count(); ++i)
-        members.append(m_memberList->item(i)->text());
+    for (int i = 0; i < m_memberList->count(); ++i) members.append(m_memberList->item(i)->text());
     tc.setMembers(members);
 
     QVector<SkillSequenceItem> seq;
     for (int i = 0; i < m_skillSeqTable->rowCount(); ++i) {
         SkillSequenceItem item;
         item.characterName = m_skillSeqTable->item(i, 0) ? m_skillSeqTable->item(i, 0)->text() : "";
-        QComboBox* combo = qobject_cast<QComboBox*>(m_skillSeqTable->cellWidget(i, 1));
-        item.skillIndex = combo ? combo->currentIndex() : 0;
+        QComboBox* skillCombo = qobject_cast<QComboBox*>(m_skillSeqTable->cellWidget(i, 1));
+        item.skillIndex = skillCombo ? skillCombo->currentIndex() : 0;
         item.reactionTag = m_skillSeqTable->item(i, 2) ? m_skillSeqTable->item(i, 2)->text() : "";
         seq.append(item);
     }
@@ -224,11 +230,15 @@ TeamConfig Page_Team::collectTeamData() const
     QVector<TeamBuff> buffs;
     for (int i = 0; i < m_buffTable->rowCount(); ++i) {
         TeamBuff tb;
-        tb.sourceCharacter = m_buffTable->item(i,0) ? m_buffTable->item(i,0)->text() : "";
-        tb.targetCharacter = m_buffTable->item(i,1) ? m_buffTable->item(i,1)->text() : "";
-        tb.buffType = m_buffTable->item(i,2) ? m_buffTable->item(i,2)->text() : "";
-        tb.value = m_buffTable->item(i,3) ? m_buffTable->item(i,3)->text().toDouble() : 0.0;
-        QCheckBox *cb = qobject_cast<QCheckBox*>(m_buffTable->cellWidget(i,4));
+        QComboBox* src = qobject_cast<QComboBox*>(m_buffTable->cellWidget(i, 0));
+        QComboBox* tgt = qobject_cast<QComboBox*>(m_buffTable->cellWidget(i, 1));
+        QComboBox* type = qobject_cast<QComboBox*>(m_buffTable->cellWidget(i, 2));
+        tb.sourceCharacter = src ? src->currentText() : "";
+        QString tgtText = tgt ? tgt->currentText() : "";
+        tb.targetCharacter = (tgtText == "全体") ? "" : tgtText;
+        tb.buffType = type ? type->currentText() : "";
+        tb.value = m_buffTable->item(i, 3) ? m_buffTable->item(i, 3)->text().toDouble() : 0.0;
+        QCheckBox *cb = qobject_cast<QCheckBox*>(m_buffTable->cellWidget(i, 4));
         tb.isPercentage = cb ? cb->isChecked() : true;
         buffs.append(tb);
     }
@@ -250,8 +260,6 @@ void Page_Team::loadTeamToForm(const TeamConfig& team)
         int row = m_skillSeqTable->rowCount();
         m_skillSeqTable->insertRow(row);
         m_skillSeqTable->setItem(row, 0, new QTableWidgetItem(step.characterName));
-
-        // 创建技能下拉框
         QComboBox *skillCombo = new QComboBox();
         const CharacterPreset* preset = DataModel::instance().findCharacterPreset(step.characterName);
         if (preset) {
@@ -262,17 +270,36 @@ void Page_Team::loadTeamToForm(const TeamConfig& team)
                 skillCombo->setCurrentIndex(step.skillIndex);
         }
         m_skillSeqTable->setCellWidget(row, 1, skillCombo);
-
         m_skillSeqTable->setItem(row, 2, new QTableWidgetItem(step.reactionTag));
-        m_skillSeqTable->setItem(row, 3, new QTableWidgetItem("~"));
     }
+
     m_buffTable->setRowCount(0);
     for (const auto& b : team.buffs()) {
         int row = m_buffTable->rowCount();
         m_buffTable->insertRow(row);
-        m_buffTable->setItem(row, 0, new QTableWidgetItem(b.sourceCharacter));
-        m_buffTable->setItem(row, 1, new QTableWidgetItem(b.targetCharacter));
-        m_buffTable->setItem(row, 2, new QTableWidgetItem(b.buffType));
+
+        QComboBox *srcCombo = new QComboBox();
+        for (int i = 0; i < m_memberList->count(); ++i)
+            srcCombo->addItem(m_memberList->item(i)->text());
+        srcCombo->setCurrentText(b.sourceCharacter);
+        m_buffTable->setCellWidget(row, 0, srcCombo);
+
+        QComboBox *tgtCombo = new QComboBox();
+        tgtCombo->addItem("全体");
+        for (int i = 0; i < m_memberList->count(); ++i)
+            tgtCombo->addItem(m_memberList->item(i)->text());
+        tgtCombo->setCurrentText(b.targetCharacter.isEmpty() ? "全体" : b.targetCharacter);
+        m_buffTable->setCellWidget(row, 1, tgtCombo);
+
+        QComboBox *typeCombo = new QComboBox();
+        typeCombo->setEditable(true);
+        QStringList buffTypes = {"攻击力%", "防御力%", "生命上限%", "元素精通", "充能效率%",
+                                 "水伤加成%", "火伤加成%", "冰伤加成%", "雷伤加成%",
+                                 "风伤加成%", "岩伤加成%", "草伤加成%", "物理伤害加成%", "全伤害加成%"};
+        typeCombo->addItems(buffTypes);
+        typeCombo->setCurrentText(b.buffType);
+        m_buffTable->setCellWidget(row, 2, typeCombo);
+
         m_buffTable->setItem(row, 3, new QTableWidgetItem(QString::number(b.value)));
         QCheckBox *cb = new QCheckBox();
         cb->setChecked(b.isPercentage);
@@ -290,18 +317,13 @@ void Page_Team::clearForm()
 }
 
 void Page_Team::onNewTeam() { clearForm(); m_teamList->clearSelection(); }
-
 void Page_Team::onDeleteTeam()
 {
     int sel = m_teamList->currentRow();
-    if (sel < 0) {
-        QMessageBox::information(this, "提示", "请先选择一个配队。");
-        return;
-    }
+    if (sel < 0) { QMessageBox::information(this, "提示", "请先选择一个配队。"); return; }
     DataModel::instance().removeTeam(sel);
     clearForm();
 }
-
 void Page_Team::onTeamListSelectionChanged()
 {
     int row = m_teamList->currentRow();

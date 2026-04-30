@@ -19,8 +19,12 @@ DPSResult DPSEngine::calculate(const TeamConfig& team,
         const SkillAction& skill = preset->skills()[step.skillIndex];
         const CharacterBaseStats& stats = preset->baseStats();
 
-        // 基础伤害 = 攻击力 * 技能倍率 (倍率为百分比)
-        double baseDamage = stats.attack * (skill.multiplier / 100.0);
+        // 根据主属性取基础数值
+        double baseAttr = stats.attack;
+        if (skill.baseAttribute == "defense") baseAttr = stats.defense;
+        else if (skill.baseAttribute == "maxHP") baseAttr = stats.maxHP;
+
+        double baseDamage = baseAttr * (skill.multiplier / 100.0);
 
         // 暴击期望
         double critRate = stats.critRate / 100.0;
@@ -28,7 +32,7 @@ DPSResult DPSEngine::calculate(const TeamConfig& team,
         double expectedCritMult = 1.0 + critRate * critDamage;
         baseDamage *= expectedCritMult;
 
-        // 配队 Buff (简单处理 allDamage 类型)
+        // 配队 Buff (简单处理)
         double buffMultiplier = 1.0;
         for (const TeamBuff& tb : team.buffs()) {
             if (tb.targetCharacter.isEmpty() || tb.targetCharacter == step.characterName) {
@@ -36,10 +40,10 @@ DPSResult DPSEngine::calculate(const TeamConfig& team,
                     if (tb.isPercentage) buffMultiplier *= (1.0 + tb.value / 100.0);
                     else buffMultiplier += tb.value;
                 }
+                // 可扩展其他类型...
             }
         }
 
-        // 增幅反应
         double reactionMult = 1.0;
         if (!step.reactionTag.isEmpty()) {
             const auto& reactions = reactionRules.reactions();
@@ -60,7 +64,7 @@ DPSResult DPSEngine::calculate(const TeamConfig& team,
         ds.reactionMultiplier = reactionMult;
         ds.buffMultiplier = buffMultiplier;
         ds.finalDamage = finalDamage;
-        ds.actionTime = skill.actionTime;
+        ds.actionTime = skill.actionTime;   // 直接使用技能预设中的动作时间
         result.steps.append(ds);
 
         totalDamage += finalDamage;

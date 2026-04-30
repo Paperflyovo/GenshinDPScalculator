@@ -17,7 +17,7 @@ void Page_Character::setupUI()
 {
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
 
-    // 左侧预设列表
+    // left
     QVBoxLayout *leftLayout = new QVBoxLayout();
     leftLayout->addWidget(new QLabel("角色预设列表", this));
     m_presetList = new QListWidget(this);
@@ -28,9 +28,9 @@ void Page_Character::setupUI()
     leftLayout->addWidget(m_deleteBtn);
     mainLayout->addLayout(leftLayout, 1);
 
-    // 右侧编辑区
+    // right
     QVBoxLayout *rightLayout = new QVBoxLayout();
-    QLabel* editLabel = new QLabel("编辑角色预设", this);
+    QLabel *editLabel = new QLabel("编辑角色预设", this);
     editLabel->setStyleSheet("font-weight:bold;");
     rightLayout->addWidget(editLabel);
 
@@ -43,23 +43,22 @@ void Page_Character::setupUI()
     m_defEdit = new QDoubleSpinBox(this); m_defEdit->setRange(0, 99999);
     m_emEdit = new QDoubleSpinBox(this); m_emEdit->setRange(0, 9999);
     m_erEdit = new QDoubleSpinBox(this); m_erEdit->setRange(0, 9999);
+    m_erEdit->setSuffix("%");
+    m_erEdit->setValue(100.0);
     form->addRow("生命上限:", m_hpEdit);
     form->addRow("攻击力:", m_atkEdit);
     form->addRow("防御力:", m_defEdit);
     form->addRow("元素精通:", m_emEdit);
     form->addRow("充能效率:", m_erEdit);
 
-    // 元素与物理加成 (0~7)
     QStringList bonusNames = {"水伤加成","火伤加成","冰伤加成","雷伤加成","风伤加成","岩伤加成","草伤加成","物理加成"};
-    m_bonusEdits.resize(10); // 预分配10个位置 (0~7加成, 8暴击, 9暴伤)
+    m_bonusEdits.resize(10);
     for (int i = 0; i < 8; ++i) {
         m_bonusEdits[i] = new QDoubleSpinBox(this);
         m_bonusEdits[i]->setRange(0, 9999);
         m_bonusEdits[i]->setSuffix("%");
         form->addRow(bonusNames[i], m_bonusEdits[i]);
     }
-
-    // 双暴
     m_bonusEdits[8] = new QDoubleSpinBox(this);
     m_bonusEdits[8]->setRange(0, 100);
     m_bonusEdits[8]->setSuffix("%");
@@ -72,10 +71,11 @@ void Page_Character::setupUI()
 
     rightLayout->addLayout(form);
 
-    // 技能表格
-    rightLayout->addWidget(new QLabel("天赋技能列表", this));
-    m_skillTable = new QTableWidget(0, 4, this);
-    m_skillTable->setHorizontalHeaderLabels({"技能名", "类型", "倍率(%)", "动作时间(秒)"});
+    // 技能表格 (5列)
+    QLabel *skillLabel = new QLabel("天赋技能列表", this);
+    rightLayout->addWidget(skillLabel);
+    m_skillTable = new QTableWidget(0, 5, this);
+    m_skillTable->setHorizontalHeaderLabels({"技能名", "类型", "主属性", "倍率(%)", "动作时间(秒)"});
     m_skillTable->horizontalHeader()->setStretchLastSection(true);
     rightLayout->addWidget(m_skillTable);
 
@@ -90,7 +90,7 @@ void Page_Character::setupUI()
     rightLayout->addWidget(m_saveBtn);
     mainLayout->addLayout(rightLayout, 2);
 
-    // 信号连接
+    // connections
     connect(m_newBtn, &QPushButton::clicked, this, &Page_Character::onNewPreset);
     connect(m_deleteBtn, &QPushButton::clicked, this, &Page_Character::onDeletePreset);
     connect(m_saveBtn, &QPushButton::clicked, this, &Page_Character::onSavePreset);
@@ -102,8 +102,12 @@ void Page_Character::setupUI()
         QComboBox *typeCombo = new QComboBox();
         typeCombo->addItems({"普通攻击","重击","元素战技","元素爆发","其他"});
         m_skillTable->setCellWidget(row, 1, typeCombo);
-        m_skillTable->setItem(row, 2, new QTableWidgetItem("100"));
-        m_skillTable->setItem(row, 3, new QTableWidgetItem("1.0"));
+        QComboBox *attCombo = new QComboBox();
+        attCombo->addItems({"攻击力","防御力","生命上限"});
+        attCombo->setCurrentIndex(0);
+        m_skillTable->setCellWidget(row, 2, attCombo);
+        m_skillTable->setItem(row, 3, new QTableWidgetItem("100"));
+        m_skillTable->setItem(row, 4, new QTableWidgetItem("1.0"));
     });
     connect(m_removeSkillBtn, &QPushButton::clicked, [this]() {
         int row = m_skillTable->currentRow();
@@ -138,7 +142,6 @@ void Page_Character::loadPresetToForm(const CharacterPreset& preset)
 
     double bonuses[] = {s.hydroBonus, s.pyroBonus, s.cryoBonus, s.electroBonus, s.anemoBonus, s.geoBonus, s.dendroBonus, s.physicalBonus};
     for (int i = 0; i < 8; ++i) m_bonusEdits[i]->setValue(bonuses[i]);
-
     m_bonusEdits[8]->setValue(s.critRate);
     m_bonusEdits[9]->setValue(s.critDamage);
 
@@ -151,8 +154,14 @@ void Page_Character::loadPresetToForm(const CharacterPreset& preset)
         typeCombo->addItems({"普通攻击","重击","元素战技","元素爆发","其他"});
         typeCombo->setCurrentIndex(static_cast<int>(skill.type));
         m_skillTable->setCellWidget(row, 1, typeCombo);
-        m_skillTable->setItem(row, 2, new QTableWidgetItem(QString::number(skill.multiplier)));
-        m_skillTable->setItem(row, 3, new QTableWidgetItem(QString::number(skill.actionTime)));
+        QComboBox *attCombo = new QComboBox();
+        attCombo->addItems({"攻击力","防御力","生命上限"});
+        if (skill.baseAttribute == "defense") attCombo->setCurrentIndex(1);
+        else if (skill.baseAttribute == "maxHP") attCombo->setCurrentIndex(2);
+        else attCombo->setCurrentIndex(0);
+        m_skillTable->setCellWidget(row, 2, attCombo);
+        m_skillTable->setItem(row, 3, new QTableWidgetItem(QString::number(skill.multiplier)));
+        m_skillTable->setItem(row, 4, new QTableWidgetItem(QString::number(skill.actionTime)));
     }
 }
 
@@ -181,10 +190,16 @@ CharacterPreset Page_Character::collectFormData() const
     for (int i = 0; i < m_skillTable->rowCount(); ++i) {
         SkillAction sa;
         sa.name = m_skillTable->item(i, 0) ? m_skillTable->item(i, 0)->text() : "";
-        QComboBox* combo = qobject_cast<QComboBox*>(m_skillTable->cellWidget(i, 1));
-        sa.type = combo ? static_cast<SkillType>(combo->currentIndex()) : SkillType::NormalAttack;
-        sa.multiplier = m_skillTable->item(i, 2) ? m_skillTable->item(i, 2)->text().toDouble() : 100.0;
-        sa.actionTime = m_skillTable->item(i, 3) ? m_skillTable->item(i, 3)->text().toDouble() : 1.0;
+        QComboBox* typeCombo = qobject_cast<QComboBox*>(m_skillTable->cellWidget(i, 1));
+        sa.type = typeCombo ? static_cast<SkillType>(typeCombo->currentIndex()) : SkillType::NormalAttack;
+        QComboBox* attCombo = qobject_cast<QComboBox*>(m_skillTable->cellWidget(i, 2));
+        if (attCombo) {
+            if (attCombo->currentIndex() == 1) sa.baseAttribute = "defense";
+            else if (attCombo->currentIndex() == 2) sa.baseAttribute = "maxHP";
+            else sa.baseAttribute = "attack";
+        }
+        sa.multiplier = m_skillTable->item(i, 3) ? m_skillTable->item(i, 3)->text().toDouble() : 100.0;
+        sa.actionTime = m_skillTable->item(i, 4) ? m_skillTable->item(i, 4)->text().toDouble() : 1.0;
         skills.append(sa);
     }
     preset.setSkills(skills);
@@ -198,7 +213,7 @@ void Page_Character::clearForm()
     m_atkEdit->setValue(0);
     m_defEdit->setValue(0);
     m_emEdit->setValue(0);
-    m_erEdit->setValue(0);
+    m_erEdit->setValue(100.0);
     for (int i = 0; i < 10; ++i) m_bonusEdits[i]->setValue(0);
     m_skillTable->setRowCount(0);
 }
