@@ -8,7 +8,7 @@ A GenshinDPS calculator based on Qt6CMake
 
 Copyright © 2026 Paperfly_ovo 
 All rights reserved.
-Unauthorized copying, distribution, or modification is prohibited.
+
 This software uses Qt under the Qt Educational License.
 Not for commercial use.
 See: https://www.qt.io/licensing/
