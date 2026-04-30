@@ -1,0 +1,22 @@
+{
+	"BUILD_DIR" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/out/build/release/GenshinDPS_autogen",
+	"CMAKE_BINARY_DIR" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/out/build/release",
+	"CMAKE_CURRENT_BINARY_DIR" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/out/build/release",
+	"CMAKE_CURRENT_SOURCE_DIR" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS",
+	"CMAKE_SOURCE_DIR" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS",
+	"CROSS_CONFIG" : false,
+	"GENERATOR" : "Ninja",
+	"INCLUDE_DIR" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/out/build/release/GenshinDPS_autogen/include",
+	"INPUTS" : [],
+	"LOCK_FILE" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/out/build/release/CMakeFiles/GenshinDPS_autogen.dir/AutoRcc_resources_EWIEGA46WW_Lock.lock",
+	"MULTI_CONFIG" : false,
+	"OPTIONS" : [ "--no-zstd", "-name", "resources" ],
+	"OUTPUT_CHECKSUM" : "EWIEGA46WW",
+	"OUTPUT_NAME" : "qrc_resources.cpp",
+	"RCC_EXECUTABLE" : "E:/Qt/6.11.0/msvc2022_64/bin/rcc.exe",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/out/build/release/CMakeFiles/GenshinDPS_autogen.dir/AutoRcc_resources_EWIEGA46WW_Used.txt",
+	"SOURCE" : "E:/\u684c\u9762/DPS calculater/DeepSeekV4 ver/GenshinDPS/resources.qrc",
+	"USE_BETTER_GRAPH" : true,
+	"VERBOSITY" : 0
+}
