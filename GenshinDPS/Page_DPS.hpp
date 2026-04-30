@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QTextEdit>
+#include <QSpinBox>
 #include "DPSEngine.hpp"
 #include "DataModel.hpp"
 
@@ -28,6 +29,7 @@ private:
     QComboBox *m_teamCombo;
     QPushButton *m_calcButton;
     QTextEdit *m_resultView;
+    QSpinBox *m_monsterLevelEdit;
     DPSEngine m_engine;
 };
 

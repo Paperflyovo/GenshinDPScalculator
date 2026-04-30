@@ -35,6 +35,9 @@ public:
 
     const ReactionRuleSet& reactionRules() const;
 
+    int monsterLevel() const;
+    void setMonsterLevel(int level);
+
     void loadFromJson();
     void saveToJson() const;
 
@@ -43,6 +46,7 @@ signals:
     void teamsChanged();
     void buffsChanged();
     void reactionsChanged();
+    void monsterLevelChanged();
 
 private:
     DataModel();
@@ -54,6 +58,7 @@ private:
     QVector<TeamConfig> m_teams;
     QVector<Buff> m_buffTemplates;
     ReactionRuleSet m_reactionRules;
+    int m_monsterLevel = 110;
 };
 
 #endif

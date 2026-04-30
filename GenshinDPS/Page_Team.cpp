@@ -6,6 +6,7 @@
 #include <QMessageBox>
 #include <QCheckBox>
 #include <QAbstractItemModel>
+#include <QDoubleSpinBox>
 
 Page_Team::Page_Team(QWidget *parent) : QWidget(parent)
 {
@@ -65,16 +66,16 @@ void Page_Team::setupUI()
     skillCtrl->addWidget(m_removeSkillBtn);
     rightLayout->addLayout(skillCtrl);
 
-    // 技能序列表格：角色、技能名称、反应标记（移除动作时间列）
-    m_skillSeqTable = new QTableWidget(0, 3, this);
-    m_skillSeqTable->setHorizontalHeaderLabels({"角色", "技能名称", "反应标记"});
+    // 技能序列表格：角色、技能名称、反应标记、无视防御%
+    m_skillSeqTable = new QTableWidget(0, 4, this);
+    m_skillSeqTable->setHorizontalHeaderLabels({"角色", "技能名称", "反应标记", "无视防御%"});
     m_skillSeqTable->horizontalHeader()->setStretchLastSection(true);
     rightLayout->addWidget(m_skillSeqTable);
 
-    // Buff 区域
+    // Buff 区域，去掉百分比列
     rightLayout->addWidget(new QLabel("配队 Buff:", this));
-    m_buffTable = new QTableWidget(0, 5, this);
-    m_buffTable->setHorizontalHeaderLabels({"来源角色", "目标角色", "增益类型", "数值", "百分比"});
+    m_buffTable = new QTableWidget(0, 4, this);
+    m_buffTable->setHorizontalHeaderLabels({"来源角色", "目标角色", "增益类型", "数值"});
     m_buffTable->horizontalHeader()->setStretchLastSection(true);
     rightLayout->addWidget(m_buffTable);
 
@@ -150,7 +151,13 @@ void Page_Team::onAddSkillStep()
             skillCombo->addItem(sa.name);
     }
     m_skillSeqTable->setCellWidget(row, 1, skillCombo);
-    m_skillSeqTable->setItem(row, 2, new QTableWidgetItem(""));
+    m_skillSeqTable->setItem(row, 2, new QTableWidgetItem(""));   // 反应标记
+
+    QDoubleSpinBox *ignoreSpin = new QDoubleSpinBox();
+    ignoreSpin->setRange(0, 100);
+    ignoreSpin->setSuffix("%");
+    ignoreSpin->setValue(0);
+    m_skillSeqTable->setCellWidget(row, 3, ignoreSpin);
 }
 
 void Page_Team::onRemoveSkillStep()
@@ -164,33 +171,33 @@ void Page_Team::onAddBuff()
     int row = m_buffTable->rowCount();
     m_buffTable->insertRow(row);
 
-    // 来源角色下拉
     QComboBox *srcCombo = new QComboBox();
     for (int i = 0; i < m_memberList->count(); ++i)
         srcCombo->addItem(m_memberList->item(i)->text());
     m_buffTable->setCellWidget(row, 0, srcCombo);
 
-    // 目标角色下拉（可包含全体）
     QComboBox *tgtCombo = new QComboBox();
     tgtCombo->addItem("全体");
     for (int i = 0; i < m_memberList->count(); ++i)
         tgtCombo->addItem(m_memberList->item(i)->text());
     m_buffTable->setCellWidget(row, 1, tgtCombo);
 
-    // 增益类型可编辑下拉
     QComboBox *typeCombo = new QComboBox();
     typeCombo->setEditable(true);
-    QStringList buffTypes = {"攻击力%", "防御力%", "生命上限%", "元素精通", "充能效率%",
-                             "水伤加成%", "火伤加成%", "冰伤加成%", "雷伤加成%",
-                             "风伤加成%", "岩伤加成%", "草伤加成%", "物理伤害加成%", "全伤害加成%"};
+    QStringList buffTypes = {
+        "攻击力%", "防御力%", "生命上限%", "元素精通", "充能效率%",
+        "水伤加成%", "火伤加成%", "冰伤加成%", "雷伤加成%",
+        "风伤加成%", "岩伤加成%", "草伤加成%", "物理伤害加成%", "全伤害加成%",
+        "暴击率加成%", "暴击伤害加成%",
+        "小攻击", "小防御", "小生命",
+        "减防%"
+    };
     typeCombo->addItems(buffTypes);
     typeCombo->setCurrentText("全伤害加成%");
     m_buffTable->setCellWidget(row, 2, typeCombo);
 
     m_buffTable->setItem(row, 3, new QTableWidgetItem("0"));
-    QCheckBox *cb = new QCheckBox();
-    cb->setChecked(true);
-    m_buffTable->setCellWidget(row, 4, cb);
+    // 不再需要百分比复选框
 }
 
 void Page_Team::onRemoveBuff()
@@ -223,6 +230,8 @@ TeamConfig Page_Team::collectTeamData() const
         QComboBox* skillCombo = qobject_cast<QComboBox*>(m_skillSeqTable->cellWidget(i, 1));
         item.skillIndex = skillCombo ? skillCombo->currentIndex() : 0;
         item.reactionTag = m_skillSeqTable->item(i, 2) ? m_skillSeqTable->item(i, 2)->text() : "";
+        QDoubleSpinBox* ignoreSpin = qobject_cast<QDoubleSpinBox*>(m_skillSeqTable->cellWidget(i, 3));
+        item.ignoreDefensePercent = ignoreSpin ? ignoreSpin->value() : 0.0;
         seq.append(item);
     }
     tc.setSkillSequence(seq);
@@ -238,8 +247,12 @@ TeamConfig Page_Team::collectTeamData() const
         tb.targetCharacter = (tgtText == "全体") ? "" : tgtText;
         tb.buffType = type ? type->currentText() : "";
         tb.value = m_buffTable->item(i, 3) ? m_buffTable->item(i, 3)->text().toDouble() : 0.0;
-        QCheckBox *cb = qobject_cast<QCheckBox*>(m_buffTable->cellWidget(i, 4));
-        tb.isPercentage = cb ? cb->isChecked() : true;
+        // 根据类型判断是否为百分比（包含%且不是小词条）
+        QString btype = tb.buffType;
+        bool isPercent = true;
+        if (btype == "小攻击" || btype == "小防御" || btype == "小生命" || btype == "元素精通")
+            isPercent = false;
+        tb.isPercentage = isPercent;
         buffs.append(tb);
     }
     tc.setBuffs(buffs);
@@ -255,6 +268,7 @@ void Page_Team::loadTeamToForm(const TeamConfig& team)
         m_memberList->addItem(m);
         m_skillCharCombo->addItem(m);
     }
+
     m_skillSeqTable->setRowCount(0);
     for (const auto& step : team.skillSequence()) {
         int row = m_skillSeqTable->rowCount();
@@ -271,6 +285,11 @@ void Page_Team::loadTeamToForm(const TeamConfig& team)
         }
         m_skillSeqTable->setCellWidget(row, 1, skillCombo);
         m_skillSeqTable->setItem(row, 2, new QTableWidgetItem(step.reactionTag));
+        QDoubleSpinBox *ignoreSpin = new QDoubleSpinBox();
+        ignoreSpin->setRange(0, 100);
+        ignoreSpin->setSuffix("%");
+        ignoreSpin->setValue(step.ignoreDefensePercent);
+        m_skillSeqTable->setCellWidget(row, 3, ignoreSpin);
     }
 
     m_buffTable->setRowCount(0);
@@ -293,17 +312,19 @@ void Page_Team::loadTeamToForm(const TeamConfig& team)
 
         QComboBox *typeCombo = new QComboBox();
         typeCombo->setEditable(true);
-        QStringList buffTypes = {"攻击力%", "防御力%", "生命上限%", "元素精通", "充能效率%",
-                                 "水伤加成%", "火伤加成%", "冰伤加成%", "雷伤加成%",
-                                 "风伤加成%", "岩伤加成%", "草伤加成%", "物理伤害加成%", "全伤害加成%"};
+        QStringList buffTypes = {
+            "攻击力%", "防御力%", "生命上限%", "元素精通", "充能效率%",
+            "水伤加成%", "火伤加成%", "冰伤加成%", "雷伤加成%",
+            "风伤加成%", "岩伤加成%", "草伤加成%", "物理伤害加成%", "全伤害加成%",
+            "暴击率加成%", "暴击伤害加成%",
+            "小攻击", "小防御", "小生命",
+            "减防%"
+        };
         typeCombo->addItems(buffTypes);
         typeCombo->setCurrentText(b.buffType);
         m_buffTable->setCellWidget(row, 2, typeCombo);
 
         m_buffTable->setItem(row, 3, new QTableWidgetItem(QString::number(b.value)));
-        QCheckBox *cb = new QCheckBox();
-        cb->setChecked(b.isPercentage);
-        m_buffTable->setCellWidget(row, 4, cb);
     }
 }
 

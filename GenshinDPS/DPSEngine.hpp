@@ -26,7 +26,11 @@ struct DPSResult {
 class DPSEngine {
 public:
     DPSEngine() = default;
-    DPSResult calculate(const TeamConfig& team, const QVector<CharacterPreset>& characterPool, const ReactionRuleSet& reactionRules);
+    // characterPool 改为按值传递，计算期间不受外部影响
+    DPSResult calculate(const TeamConfig& team,
+                        QVector<CharacterPreset> characterPool,
+                        const ReactionRuleSet& reactionRules,
+                        int monsterLevel);
 };
 
 #endif

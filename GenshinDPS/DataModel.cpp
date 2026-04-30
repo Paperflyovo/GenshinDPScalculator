@@ -37,6 +37,9 @@ void DataModel::removeBuffTemplate(int index) { if(index>=0 && index<m_buffTempl
 
 const ReactionRuleSet& DataModel::reactionRules() const { return m_reactionRules; }
 
+int DataModel::monsterLevel() const { return m_monsterLevel; }
+void DataModel::setMonsterLevel(int level) { m_monsterLevel = level; emit monsterLevelChanged(); }
+
 void DataModel::loadFromJson()
 {
     QFile file("data.json");
@@ -44,6 +47,8 @@ void DataModel::loadFromJson()
     QByteArray data = file.readAll(); file.close();
     QJsonDocument doc(QJsonDocument::fromJson(data));
     QJsonObject root = doc.object();
+
+    m_monsterLevel = root["monsterLevel"].toInt(110);
 
     m_characterPresets.clear();
     QJsonArray charArray = root["characters"].toArray();
@@ -61,6 +66,7 @@ void DataModel::loadFromJson()
 void DataModel::saveToJson() const
 {
     QJsonObject root;
+    root["monsterLevel"] = m_monsterLevel;
     QJsonArray charArray; for(const auto& c : m_characterPresets) charArray.append(c.toJson());
     root["characters"] = charArray;
     QJsonArray teamArray; for(const auto& t : m_teams) teamArray.append(t.toJson());

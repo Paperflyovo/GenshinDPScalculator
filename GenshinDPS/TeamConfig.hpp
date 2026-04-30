@@ -18,6 +18,7 @@ struct SkillSequenceItem {
     QString characterName;
     int skillIndex = 0;
     QString reactionTag;
+    double ignoreDefensePercent = 0.0;
 };
 
 class TeamConfig {

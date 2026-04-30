@@ -21,6 +21,7 @@ QJsonObject CharacterPreset::toJson() const
     stats["physicalBonus"] = m_baseStats.physicalBonus;
     stats["critRate"] = m_baseStats.critRate;
     stats["critDamage"] = m_baseStats.critDamage;
+    stats["characterLevel"] = m_baseStats.characterLevel;
     obj["baseStats"] = stats;
 
     QJsonArray skillsArr;
@@ -31,6 +32,7 @@ QJsonObject CharacterPreset::toJson() const
         skill["multiplier"] = s.multiplier;
         skill["actionTime"] = s.actionTime;
         skill["baseAttribute"] = s.baseAttribute;
+        skill["damageElement"] = s.damageElement;
         skillsArr.append(skill);
     }
     obj["skills"] = skillsArr;
@@ -59,6 +61,7 @@ CharacterPreset CharacterPreset::fromJson(const QJsonObject& obj)
     b.physicalBonus = stats["physicalBonus"].toDouble();
     b.critRate = stats["critRate"].toDouble(5.0);
     b.critDamage = stats["critDamage"].toDouble(50.0);
+    b.characterLevel = stats["characterLevel"].toInt(90);
     preset.setBaseStats(b);
 
     QJsonArray skillsArr = obj["skills"].toArray();
@@ -71,6 +74,7 @@ CharacterPreset CharacterPreset::fromJson(const QJsonObject& obj)
         a.multiplier = s["multiplier"].toDouble();
         a.actionTime = s["actionTime"].toDouble();
         a.baseAttribute = s["baseAttribute"].toString("attack");
+        a.damageElement = s["damageElement"].toString("Physical");
         skills.append(a);
     }
     preset.setSkills(skills);

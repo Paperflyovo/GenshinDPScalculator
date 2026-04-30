@@ -20,7 +20,8 @@ struct SkillAction {
     SkillType type = SkillType::NormalAttack;
     double multiplier = 1.0;
     double actionTime = 1.0;
-    QString baseAttribute = "attack"; // "attack", "defense", "maxHP"
+    QString baseAttribute = "attack";   // "attack", "defense", "maxHP"
+    QString damageElement = "Physical"; // 伤害元素：Physical, Pyro, Hydro, Cryo, Electro, Anemo, Geo, Dendro
 };
 
 struct CharacterBaseStats {
@@ -28,7 +29,7 @@ struct CharacterBaseStats {
     double attack = 0.0;
     double defense = 0.0;
     double elementalMastery = 0.0;
-    double energyRecharge = 100.0;  // 默认100%
+    double energyRecharge = 100.0;
     double hydroBonus  = 0.0;
     double pyroBonus   = 0.0;
     double cryoBonus   = 0.0;
@@ -39,6 +40,7 @@ struct CharacterBaseStats {
     double physicalBonus= 0.0;
     double critRate = 5.0;
     double critDamage = 50.0;
+    int characterLevel = 90;
 };
 
 class CharacterPreset {

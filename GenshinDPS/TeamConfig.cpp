@@ -1,4 +1,5 @@
 #include "TeamConfig.hpp"
+#include <QJsonArray>
 
 QJsonObject TeamConfig::toJson() const
 {
@@ -6,8 +7,7 @@ QJsonObject TeamConfig::toJson() const
     obj["name"] = m_name;
 
     QJsonArray membersArr;
-    for (const auto& m : m_members)
-        membersArr.append(m);
+    for (const auto& m : m_members) membersArr.append(m);
     obj["members"] = membersArr;
 
     QJsonArray seqArr;
@@ -16,6 +16,7 @@ QJsonObject TeamConfig::toJson() const
         s["characterName"] = step.characterName;
         s["skillIndex"] = step.skillIndex;
         s["reactionTag"] = step.reactionTag;
+        s["ignoreDefensePercent"] = step.ignoreDefensePercent;
         seqArr.append(s);
     }
     obj["skillSequence"] = seqArr;
@@ -41,8 +42,7 @@ TeamConfig TeamConfig::fromJson(const QJsonObject& obj)
 
     QJsonArray membersArr = obj["members"].toArray();
     QVector<QString> members;
-    for (const auto& m : membersArr)
-        members.append(m.toString());
+    for (const auto& m : membersArr) members.append(m.toString());
     tc.setMembers(members);
 
     QJsonArray seqArr = obj["skillSequence"].toArray();
@@ -53,6 +53,7 @@ TeamConfig TeamConfig::fromJson(const QJsonObject& obj)
         item.characterName = s["characterName"].toString();
         item.skillIndex = s["skillIndex"].toInt();
         item.reactionTag = s["reactionTag"].toString();
+        item.ignoreDefensePercent = s["ignoreDefensePercent"].toDouble(0.0);
         seq.append(item);
     }
     tc.setSkillSequence(seq);
