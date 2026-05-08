@@ -6,14 +6,6 @@ A GenshinDPS calculator based on Qt6CMake|基于Qt6CMake开发的原神DPS计算
 因为随机度高的原因，无武器和圣遗物系统，取而代之的是，将武器和圣遗物的面板增益自己写进角色预设里，如果是团队增益就不要写进角色，写进配队中的团队增益。
 目前仅限于Windows系统可用，需要安装 VC++ 运行库。release中包含VC_redist.x64.exe。
 
-Copyright © 2026 Paperfly_ovo 
-All rights reserved.
-
-This software uses Qt under the Qt Educational License.
-Not for commercial use.
-
-See: https://www.qt.io/licensing/
-See: https://whu.edu.cn/
 
 Contact me through 2024302141145@whu.edu.cn
 
